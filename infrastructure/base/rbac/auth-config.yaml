@@ -1,0 +1,112 @@
+# Authentication and Authorization Configuration
+# This file provides configuration templates for setting up user authentication
+# and authorization in the K3s cluster
+
+---
+# OIDC Configuration for K3s (to be added to K3s server arguments)
+# Example configuration for integrating with external identity providers
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k3s-oidc-config
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: k3s-oidc-config
+    app.kubernetes.io/component: rbac
+data:
+  # OIDC configuration parameters for K3s server
+  # Add these to your K3s server startup arguments:
+  oidc-config: |
+    # --oidc-issuer-url=https://your-oidc-provider.com
+    # --oidc-client-id=kubernetes
+    # --oidc-username-claim=email
+    # --oidc-groups-claim=groups
+    # --oidc-ca-file=/path/to/ca.crt
+
+---
+# ArgoCD RBAC Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/component: rbac
+data:
+  # ArgoCD RBAC policy configuration
+  policy.default: role:readonly
+  policy.csv: |
+    # Platform administrators have full access
+    g, platform-admins, role:admin
+    
+    # Developers have application management access
+    g, developers, role:developer
+    
+    # Read-only users can view applications
+    g, cluster-readers, role:readonly
+    
+    # Custom developer role with specific permissions
+    p, role:developer, applications, *, */*, allow
+    p, role:developer, repositories, *, *, allow
+    p, role:developer, clusters, get, *, allow
+
+---
+# Pod Security Standards Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-security-config
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: pod-security-config
+    app.kubernetes.io/component: rbac
+data:
+  # Pod Security Standards enforcement levels
+  pod-security-config: |
+    # Namespace labels for Pod Security Standards:
+    # pod-security.kubernetes.io/enforce: restricted
+    # pod-security.kubernetes.io/audit: restricted
+    # pod-security.kubernetes.io/warn: restricted
+    
+    # System namespaces should use privileged standard:
+    # kube-system, kube-public, kube-node-lease: privileged
+    
+    # Application namespaces should use restricted standard:
+    # development, staging, production: restricted
+
+---
+# Network Policy for RBAC components
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rbac-components-netpol
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: rbac-components-netpol
+    app.kubernetes.io/component: rbac
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: rbac
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    - namespaceSelector:
+        matchLabels:
+          name: argocd
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443

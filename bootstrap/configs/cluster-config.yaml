@@ -1,0 +1,80 @@
+# K3s Single-Node Cluster Configuration for Debian WSL2
+# Optimized for minimal overhead and WSL2 environment
+
+# Cluster networking - smaller ranges for single node
+cluster-cidr: "10.42.0.0/24"
+service-cidr: "10.43.0.0/24"
+cluster-dns: "10.43.0.10"
+
+# Node configuration - WSL2 optimized
+node-name: "wsl2-k3s-node"
+flannel-backend: "host-gw" # More efficient for single node
+disable-network-policy: true # Not needed for single node
+
+# Disable unnecessary components for single node
+disable:
+  - traefik # Use external ingress or none
+  - servicelb # Not needed for single node
+  - metrics-server # Reduce overhead
+
+# Storage configuration - WSL2 paths
+default-local-storage-path: "/var/lib/rancher/k3s/storage"
+data-dir: "/var/lib/rancher/k3s"
+
+# Minimal security for development
+protect-kernel-defaults: false # WSL2 compatibility
+secrets-encryption: false # Reduce overhead
+
+# Kubelet configuration - WSL2 optimized
+kubelet-arg:
+  - "max-pods=50" # Lower for single node
+  - "cluster-dns=10.43.0.10"
+  - "cluster-domain=cluster.local"
+  - "eviction-hard=memory.available<100Mi"
+  - "housekeeping-interval=30s" # Reduce CPU usage
+  - "image-gc-high-threshold=70"
+  - "image-gc-low-threshold=50"
+
+# Kube-proxy configuration - minimal
+kube-proxy-arg:
+  - "proxy-mode=iptables"
+  - "cluster-cidr=10.42.0.0/24"
+
+# API server configuration - single node optimized
+kube-apiserver-arg:
+  - "service-cluster-ip-range=10.43.0.0/24"
+  - "service-node-port-range=30000-32767"
+  - "enable-admission-plugins=NodeRestriction" # Minimal plugins
+  - "request-timeout=60s" # Shorter timeout
+
+# Controller manager - single node
+kube-controller-manager-arg:
+  - "cluster-cidr=10.42.0.0/24"
+  - "service-cluster-ip-range=10.43.0.0/24"
+  - "node-monitor-period=10s"
+  - "node-monitor-grace-period=20s"
+
+# Etcd configuration - single node
+etcd-arg:
+  - "--heartbeat-interval=500"
+  - "--election-timeout=2500"
+
+# Log configuration - WSL2 friendly
+log: "/var/log/k3s.log"
+alsologtostderr: false
+logtostderr: false
+v: 1 # Moderate logging
+
+# Snapshots - less frequent for development
+etcd-snapshot-schedule-cron: "0 2 * * *" # Daily at 2 AM
+etcd-snapshot-retention: 3
+etcd-snapshot-dir: "/var/lib/rancher/k3s/server/db/snapshots"
+
+# Node labels for single node
+node-label:
+  - "node-type=single"
+  - "environment=wsl2"
+  - "k3s.io/hostname=wsl2-k3s-node"
+
+# WSL2 specific settings
+write-kubeconfig-mode: "0644"

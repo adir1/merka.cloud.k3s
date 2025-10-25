@@ -1,0 +1,9 @@
+# Infrastructure Base Directory
+
+This directory contains base Kubernetes manifests and configurations.
+
+Base configurations will include:
+- Common infrastructure components
+- Kustomize base configurations
+- Reusable resource definitions
+- Configuration validation rules

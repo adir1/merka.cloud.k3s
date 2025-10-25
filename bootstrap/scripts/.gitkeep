@@ -1,0 +1,8 @@
+# Bootstrap Scripts Directory
+
+This directory contains scripts for K3s cluster initialization and setup.
+
+Scripts will include:
+- install-k3s.sh: Main cluster installation script
+- post-install.sh: Post-installation validation and setup
+- Other utility scripts for cluster management

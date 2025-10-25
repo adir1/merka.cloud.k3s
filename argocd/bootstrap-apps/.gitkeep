@@ -1,0 +1,10 @@
+# ArgoCD Bootstrap Applications Directory
+
+This directory contains initial ArgoCD applications for cluster management.
+
+Applications will include:
+- Cluster operators management
+- Infrastructure components
+- Monitoring stack
+- Security tools
+- Application-of-applications pattern

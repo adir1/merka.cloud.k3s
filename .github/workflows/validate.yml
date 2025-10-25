@@ -1,0 +1,88 @@
+name: Validate Repository
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+        
+    - name: Validate Kubernetes manifests
+      run: |
+        # Find and validate all YAML files that look like Kubernetes manifests
+        find . -name "*.yaml" -o -name "*.yml" | while read file; do
+          if grep -q "apiVersion\|kind" "$file"; then
+            echo "Validating $file"
+            kubectl --dry-run=client apply -f "$file" || echo "Warning: $file failed validation"
+          fi
+        done
+        
+    - name: Validate Helm charts
+      run: |
+        # Install Helm
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        
+        # Find and validate Helm charts
+        find . -name "Chart.yaml" | while read chart; do
+          chart_dir=$(dirname "$chart")
+          echo "Validating Helm chart in $chart_dir"
+          helm lint "$chart_dir" || echo "Warning: Helm chart in $chart_dir failed validation"
+        done
+        
+    - name: Check file structure
+      run: |
+        # Verify required directories exist
+        required_dirs=(
+          "bootstrap/scripts"
+          "bootstrap/configs"
+          "bootstrap/docs"
+          "argocd/installation"
+          "argocd/bootstrap-apps"
+          "argocd/configs"
+          "infrastructure/base"
+          "infrastructure/overlays"
+          "infrastructure/operators"
+          "applications/system"
+          "applications/workloads"
+          "docs"
+        )
+        
+        for dir in "${required_dirs[@]}"; do
+          if [ ! -d "$dir" ]; then
+            echo "Error: Required directory $dir is missing"
+            exit 1
+          else
+            echo "✓ Directory $dir exists"
+          fi
+        done
+        
+    - name: Validate documentation
+      run: |
+        # Check that README exists and has basic content
+        if [ ! -f "README.md" ]; then
+          echo "Error: README.md is missing"
+          exit 1
+        fi
+        
+        # Check for basic sections in README
+        if ! grep -q "Repository Structure" README.md; then
+          echo "Warning: README.md missing Repository Structure section"
+        fi
+        
+        if ! grep -q "Getting Started" README.md; then
+          echo "Warning: README.md missing Getting Started section"
+        fi
+        
+        echo "✓ Documentation validation complete"

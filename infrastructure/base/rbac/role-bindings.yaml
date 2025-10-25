@@ -1,0 +1,94 @@
+---
+# Namespace-specific role binding for developers in development namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: developers-development
+  namespace: development
+  labels:
+    app.kubernetes.io/name: developers-development
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: developer
+subjects:
+- kind: Group
+  name: developers
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Namespace-specific role binding for developers in staging namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: developers-staging
+  namespace: staging
+  labels:
+    app.kubernetes.io/name: developers-staging
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-reader
+subjects:
+- kind: Group
+  name: developers
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# CI/CD Pipeline role binding for deployment automation
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cicd-pipeline-development
+  namespace: development
+  labels:
+    app.kubernetes.io/name: cicd-pipeline-development
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: developer
+subjects:
+- kind: ServiceAccount
+  name: cicd-pipeline
+  namespace: cicd
+
+---
+# CI/CD Pipeline role binding for staging deployments
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cicd-pipeline-staging
+  namespace: staging
+  labels:
+    app.kubernetes.io/name: cicd-pipeline-staging
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: developer
+subjects:
+- kind: ServiceAccount
+  name: cicd-pipeline
+  namespace: cicd
+
+---
+# Backup system role binding for backup operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backup-system-kube-system
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: backup-system-kube-system
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-reader
+subjects:
+- kind: ServiceAccount
+  name: backup-system
+  namespace: backup

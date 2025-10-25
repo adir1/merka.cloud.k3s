@@ -1,0 +1,72 @@
+# WSL2 Staging Configuration
+# Single-node staging environment for Debian WSL2
+
+# Compact networking for single node staging
+cluster-cidr: "10.42.0.0/24"
+service-cidr: "10.43.0.0/24"
+cluster-dns: "10.43.0.10"
+
+# WSL2 staging node
+node-name: "wsl2-staging-node"
+flannel-backend: "host-gw"
+disable-network-policy: true  # Single node doesn't need network policies
+
+# Keep essential components only
+disable:
+  - servicelb  # Use NodePort for staging
+
+# WSL2 storage configuration
+data-dir: "/var/lib/rancher/k3s-staging"
+default-local-storage-path: "/var/lib/rancher/k3s-staging/storage"
+
+# Balanced security for WSL2 staging
+protect-kernel-defaults: false  # WSL2 compatibility
+secrets-encryption: true
+
+# Staging kubelet - balanced performance
+kubelet-arg:
+  - "max-pods=60"
+  - "cluster-dns=10.43.0.10"
+  - "cluster-domain=cluster.local"
+  - "eviction-hard=memory.available<150Mi"
+  - "eviction-soft=memory.available<300Mi"
+  - "eviction-soft-grace-period=memory.available=1m"
+  - "housekeeping-interval=30s"
+
+# API server - staging optimized
+kube-apiserver-arg:
+  - "service-cluster-ip-range=10.43.0.0/24"
+  - "service-node-port-range=30000-32767"
+  - "audit-log-maxage=3"
+  - "audit-log-maxbackup=2"
+  - "audit-log-maxsize=25"
+  - "enable-admission-plugins=NodeRestriction,ResourceQuota"
+
+# Controller manager for single node
+kube-controller-manager-arg:
+  - "cluster-cidr=10.42.0.0/24"
+  - "service-cluster-ip-range=10.43.0.0/24"
+  - "node-monitor-period=10s"
+  - "node-monitor-grace-period=25s"
+
+# Etcd for staging
+etcd-arg:
+  - "--heartbeat-interval=400"
+  - "--election-timeout=2000"
+
+# WSL2 staging logging
+log: "/var/log/k3s-staging.log"
+v: 1
+
+# Regular snapshots for staging
+etcd-snapshot-schedule-cron: "0 */12 * * *"  # Twice daily
+etcd-snapshot-retention: 4
+etcd-snapshot-dir: "/var/lib/rancher/k3s-staging/server/db/snapshots"
+
+# WSL2 staging labels
+node-label:
+  - "environment=wsl2-staging"
+  - "node-type=single-staging"
+  - "platform=debian-wsl2"
+
+write-kubeconfig-mode: "0644"

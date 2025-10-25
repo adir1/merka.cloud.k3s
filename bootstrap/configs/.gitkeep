@@ -1,0 +1,9 @@
+# Bootstrap Configuration Directory
+
+This directory contains cluster configuration templates and settings.
+
+Configuration files will include:
+- cluster-config.yaml: K3s configuration template
+- Network policies and security configurations
+- Storage class definitions
+- RBAC configurations

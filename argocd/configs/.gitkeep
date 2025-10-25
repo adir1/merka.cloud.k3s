@@ -1,0 +1,9 @@
+# ArgoCD Configuration Directory
+
+This directory contains ArgoCD configuration files and settings.
+
+Configurations will include:
+- ArgoCD server configuration
+- Authentication and RBAC settings
+- Repository connections
+- Sync policies and settings

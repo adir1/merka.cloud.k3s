@@ -1,0 +1,9 @@
+# System Applications Directory
+
+This directory contains system-level applications and services.
+
+System applications will include:
+- Cluster management tools
+- System monitoring and logging
+- Security and compliance tools
+- Infrastructure services

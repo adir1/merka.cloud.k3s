@@ -1,0 +1,74 @@
+# WSL2 Development Configuration
+# Ultra-lightweight setup for Debian WSL2 single-node development
+
+# Minimal networking for WSL2
+cluster-cidr: "10.42.0.0/24"
+service-cidr: "10.43.0.0/24"
+cluster-dns: "10.43.0.10"
+
+# WSL2 node configuration
+node-name: "wsl2-dev-node"
+flannel-backend: "host-gw"  # Most efficient for single node
+disable-network-policy: true
+
+# Disable maximum components for minimal overhead
+disable:
+  - traefik
+  - servicelb
+  - metrics-server
+  - local-storage  # Use host paths instead
+
+# WSL2 storage paths
+data-dir: "/var/lib/rancher/k3s-dev"
+default-local-storage-path: "/var/lib/rancher/k3s-dev/storage"
+
+# Minimal security for WSL2 development
+protect-kernel-defaults: false
+secrets-encryption: false
+
+# Ultra-lightweight kubelet
+kubelet-arg:
+  - "max-pods=30"
+  - "cluster-dns=10.43.0.10"
+  - "cluster-domain=cluster.local"
+  - "eviction-hard=memory.available<50Mi"
+  - "housekeeping-interval=60s"
+  - "runtime-request-timeout=5m"
+  - "image-gc-high-threshold=80"
+  - "image-gc-low-threshold=60"
+
+# Minimal API server
+kube-apiserver-arg:
+  - "service-cluster-ip-range=10.43.0.0/24"
+  - "service-node-port-range=30000-32767"
+  - "enable-admission-plugins=NodeRestriction"
+  - "request-timeout=30s"
+
+# Lightweight controller manager
+kube-controller-manager-arg:
+  - "cluster-cidr=10.42.0.0/24"
+  - "service-cluster-ip-range=10.43.0.0/24"
+  - "node-monitor-period=15s"
+  - "node-monitor-grace-period=30s"
+
+# Fast etcd for development
+etcd-arg:
+  - "--heartbeat-interval=250"
+  - "--election-timeout=1250"
+
+# WSL2 logging
+log: "/var/log/k3s-dev.log"
+v: 0  # Minimal logging for performance
+
+# Minimal snapshots
+etcd-snapshot-schedule-cron: "0 6 * * 0"  # Weekly
+etcd-snapshot-retention: 2
+etcd-snapshot-dir: "/var/lib/rancher/k3s-dev/server/db/snapshots"
+
+# WSL2 development labels
+node-label:
+  - "environment=wsl2-dev"
+  - "node-type=single-dev"
+  - "platform=debian-wsl2"
+
+write-kubeconfig-mode: "0644"

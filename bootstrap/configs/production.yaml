@@ -1,0 +1,88 @@
+# WSL2 Production-like Configuration
+# Single-node production-ready setup for Debian WSL2
+
+# Efficient networking for single node production
+cluster-cidr: "10.42.0.0/24"
+service-cidr: "10.43.0.0/24"
+cluster-dns: "10.43.0.10"
+
+# WSL2 production node
+node-name: "wsl2-prod-node"
+flannel-backend: "host-gw"  # Most efficient for single node
+disable-network-policy: true  # Not needed for single node
+
+# Keep essential components for production features
+disable:
+  - servicelb  # Use NodePort or external LB
+
+# WSL2 production storage
+data-dir: "/var/lib/rancher/k3s-prod"
+default-local-storage-path: "/var/lib/rancher/k3s-prod/storage"
+
+# Balanced security for WSL2 production
+protect-kernel-defaults: false  # WSL2 compatibility
+secrets-encryption: true
+
+# Production kubelet - optimized for single node
+kubelet-arg:
+  - "max-pods=80"
+  - "cluster-dns=10.43.0.10"
+  - "cluster-domain=cluster.local"
+  - "eviction-hard=memory.available<300Mi,nodefs.available<10%"
+  - "eviction-soft=memory.available<500Mi,nodefs.available<15%"
+  - "eviction-soft-grace-period=memory.available=2m,nodefs.available=2m"
+  - "system-reserved=cpu=50m,memory=50Mi"
+  - "kube-reserved=cpu=50m,memory=50Mi"
+  - "housekeeping-interval=20s"
+
+# API server - production settings for WSL2
+kube-apiserver-arg:
+  - "service-cluster-ip-range=10.43.0.0/24"
+  - "service-node-port-range=30000-32767"
+  - "audit-log-maxage=14"
+  - "audit-log-maxbackup=5"
+  - "audit-log-maxsize=50"
+  - "audit-log-path=/var/log/k3s-audit.log"
+  - "enable-admission-plugins=NodeRestriction,ResourceQuota,LimitRanger"
+  - "request-timeout=120s"
+
+# Controller manager - single node production
+kube-controller-manager-arg:
+  - "cluster-cidr=10.42.0.0/24"
+  - "service-cluster-ip-range=10.43.0.0/24"
+  - "node-monitor-period=5s"
+  - "node-monitor-grace-period=30s"
+  - "pod-eviction-timeout=2m"
+
+# Etcd - production settings
+etcd-arg:
+  - "--heartbeat-interval=500"
+  - "--election-timeout=2500"
+
+# WSL2 production logging
+log: "/var/log/k3s-prod.log"
+alsologtostderr: false
+logtostderr: false
+v: 0
+
+# Production snapshots
+etcd-snapshot-schedule-cron: "0 */6 * * *"  # Every 6 hours
+etcd-snapshot-retention: 8
+etcd-snapshot-dir: "/var/lib/rancher/k3s-prod/server/db/snapshots"
+
+# WSL2 production labels
+node-label:
+  - "environment=wsl2-prod"
+  - "node-type=single-prod"
+  - "platform=debian-wsl2"
+
+# TLS configuration
+tls-san:
+  - "kubernetes"
+  - "kubernetes.default"
+  - "kubernetes.default.svc"
+  - "kubernetes.default.svc.cluster.local"
+  - "localhost"
+  - "127.0.0.1"
+
+write-kubeconfig-mode: "0644"

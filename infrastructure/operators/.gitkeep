@@ -1,0 +1,9 @@
+# Infrastructure Operators Directory
+
+This directory contains cluster operator definitions and configurations.
+
+Operator definitions will include:
+- Monitoring operators (Prometheus, Grafana)
+- Networking operators (Cilium, Istio)
+- Storage operators (Longhorn, Rook)
+- Security operators and tools

@@ -1,0 +1,9 @@
+# Infrastructure Overlays Directory
+
+This directory contains environment-specific customizations.
+
+Overlays will include:
+- Development environment configurations
+- Staging environment configurations
+- Production environment configurations
+- Environment-specific patches and customizations

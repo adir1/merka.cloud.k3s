@@ -1,0 +1,9 @@
+# ArgoCD Installation Directory
+
+This directory contains ArgoCD deployment files and configurations.
+
+Files will include:
+- ArgoCD Helm chart values
+- Custom resource definitions
+- Namespace and RBAC configurations
+- Installation manifests
