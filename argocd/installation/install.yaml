@@ -1,0 +1,103 @@
+# ArgoCD Installation Script
+# This file contains the installation commands and configuration for ArgoCD
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-install-script
+  namespace: argocd
+data:
+  install.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "Installing ArgoCD using Helm..."
+    
+    # Add ArgoCD Helm repository
+    helm repo add argo https://argoproj.github.io/argo-helm
+    helm repo update
+    
+    # Install ArgoCD with custom values
+    helm upgrade --install argocd argo/argo-cd \
+      --namespace argocd \
+      --create-namespace \
+      --values /config/values.yaml \
+      --wait \
+      --timeout 600s
+    
+    echo "ArgoCD installation completed successfully"
+    
+    # Wait for ArgoCD server to be ready
+    echo "Waiting for ArgoCD server to be ready..."
+    kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
+    
+    # Get initial admin password
+    echo "Getting ArgoCD admin password..."
+    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d > /tmp/argocd-admin-password
+    
+    echo "ArgoCD is ready!"
+    echo "Admin password saved to /tmp/argocd-admin-password"
+    echo "Access ArgoCD at: https://argocd.local"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: argocd-installer
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  template:
+    spec:
+      serviceAccountName: argocd-installer
+      containers:
+      - name: installer
+        image: alpine/helm:3.12.3
+        command: ["/bin/sh"]
+        args: ["/scripts/install.sh"]
+        volumeMounts:
+        - name: install-script
+          mountPath: /scripts
+        - name: values-config
+          mountPath: /config
+        env:
+        - name: KUBECONFIG
+          value: /tmp/kubeconfig
+      volumes:
+      - name: install-script
+        configMap:
+          name: argocd-install-script
+          defaultMode: 0755
+      - name: values-config
+        configMap:
+          name: argocd-values
+      restartPolicy: OnFailure
+  backoffLimit: 3
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-installer
+  namespace: argocd
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argocd-installer
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-installer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argocd-installer
+subjects:
+- kind: ServiceAccount
+  name: argocd-installer
+  namespace: argocd

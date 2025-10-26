@@ -1,0 +1,57 @@
+# System Applications
+# Manages system-level applications like monitoring, logging, and cluster utilities
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: system-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: system-apps
+    app.kubernetes.io/part-of: argocd-bootstrap
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/your-org/k3s-cluster-management
+    targetRevision: HEAD
+    path: applications/system
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: system-apps
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+        
+  revisionHistoryLimit: 10
+  
+  # Health checks for system applications
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+        - /spec/template/spec/containers/0/image
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data

@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.dashboard.name }}
+  namespace: {{ .Values.dashboard.namespace }}
+  labels:
+    {{- include "cluster-dashboard.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.dashboard.service.type }}
+  ports:
+  - port: {{ .Values.dashboard.service.port }}
+    targetPort: {{ .Values.dashboard.service.targetPort }}
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "cluster-dashboard.selectorLabels" . | nindent 4 }}
+
+{{- if .Values.dashboard.service.nodePort.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.dashboard.name }}-nodeport
+  namespace: {{ .Values.dashboard.namespace }}
+  labels:
+    {{- include "cluster-dashboard.labels" . | nindent 4 }}
+    service-type: nodeport
+spec:
+  type: NodePort
+  ports:
+  - port: {{ .Values.dashboard.service.port }}
+    targetPort: {{ .Values.dashboard.service.targetPort }}
+    nodePort: {{ .Values.dashboard.service.nodePort.port }}
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "cluster-dashboard.selectorLabels" . | nindent 4 }}
+{{- end }}

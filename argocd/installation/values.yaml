@@ -1,0 +1,219 @@
+# ArgoCD Helm Chart Values
+# This configuration provides a production-ready ArgoCD installation
+# with proper resource limits, security settings, and K3s compatibility
+
+global:
+  image:
+    repository: quay.io/argoproj/argocd
+    tag: v2.8.4
+    imagePullPolicy: IfNotPresent
+
+## ArgoCD Configuration
+configs:
+  # ArgoCD configuration parameters
+  params:
+    # Server configuration
+    server.insecure: true  # Will be secured via ingress TLS termination
+    server.grpc.web: true
+    server.enable.proxy.extension: true
+    
+    # Application controller configuration
+    application.instanceLabelKey: argocd.argoproj.io/instance
+    
+    # Repository server configuration
+    reposerver.parallelism.limit: 10
+
+  # ArgoCD server configuration
+  cm:
+    # Repository configuration will be added via separate config
+    url: https://argocd.local
+    application.instanceLabelKey: argocd.argoproj.io/instance
+    
+    # Enable anonymous access for initial setup (will be secured later)
+    users.anonymous.enabled: "false"
+    
+    # OIDC configuration placeholder
+    oidc.config: |
+      name: OIDC
+      issuer: https://argocd.local/api/dex
+      clientId: argocd
+      clientSecret: $oidc.clientSecret
+      requestedScopes: ["openid", "profile", "email", "groups"]
+
+  # RBAC configuration
+  rbac:
+    policy.default: role:readonly
+    policy.csv: |
+      # Default policies
+      p, role:admin, applications, *, */*, allow
+      p, role:admin, clusters, *, *, allow
+      p, role:admin, repositories, *, *, allow
+      
+      # Developer role
+      p, role:developer, applications, get, */*, allow
+      p, role:developer, applications, sync, */*, allow
+      
+      # Readonly role
+      p, role:readonly, applications, get, */*, allow
+      p, role:readonly, clusters, get, *, allow
+      p, role:readonly, repositories, get, *, allow
+      
+      # Admin user binding
+      g, admin, role:admin
+
+## ArgoCD Server
+server:
+  name: server
+  replicas: 1
+  
+  # Resource limits for server
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  # Server configuration
+  config:
+    url: https://argocd.local
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+  
+  # Ingress configuration (will be managed separately)
+  ingress:
+    enabled: false
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    fsGroup: 999
+    capabilities:
+      drop:
+        - ALL
+
+## ArgoCD Application Controller
+controller:
+  name: application-controller
+  replicas: 1
+  
+  # Resource limits for controller
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    fsGroup: 999
+    capabilities:
+      drop:
+        - ALL
+
+## ArgoCD Repository Server
+repoServer:
+  name: repo-server
+  replicas: 1
+  
+  # Resource limits for repo server
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    fsGroup: 999
+    capabilities:
+      drop:
+        - ALL
+
+## ArgoCD Dex Server (for OIDC)
+dex:
+  enabled: true
+  name: dex-server
+  
+  # Resource limits for dex
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    fsGroup: 999
+    capabilities:
+      drop:
+        - ALL
+
+## ArgoCD Redis
+redis:
+  enabled: true
+  name: redis
+  
+  # Resource limits for redis
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    fsGroup: 999
+    capabilities:
+      drop:
+        - ALL
+
+## ArgoCD Notifications Controller
+notifications:
+  enabled: false  # Can be enabled later for notifications
+
+## ArgoCD ApplicationSet Controller
+applicationSet:
+  enabled: true
+  name: applicationset-controller
+  replicas: 1
+  
+  # Resource limits for applicationset controller
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    fsGroup: 999
+    capabilities:
+      drop:
+        - ALL

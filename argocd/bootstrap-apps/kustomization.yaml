@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: argocd-bootstrap-apps
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+
+resources:
+  - root-app.yaml
+  - infrastructure-app.yaml
+  - operators-app.yaml
+  - ingress-app.yaml
+  - system-apps.yaml
+  - dashboard-app.yaml
+  - workloads-app.yaml
+
+commonLabels:
+  app.kubernetes.io/name: argocd-bootstrap-apps
+  app.kubernetes.io/part-of: argocd
+  app.kubernetes.io/managed-by: kustomize
+
+# Patches for environment-specific customizations
+patchesStrategicMerge: []
+
+# JSON patches for fine-grained modifications
+patchesJson6902: []
+
+# Configuration transformations
+transformers: []

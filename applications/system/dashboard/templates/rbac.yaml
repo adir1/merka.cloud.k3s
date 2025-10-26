@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.dashboard.name }}
+  namespace: {{ .Values.dashboard.namespace }}
+  labels:
+    {{- include "cluster-dashboard.labels" . | nindent 4 }}
+automountServiceAccountToken: false
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.dashboard.name }}-viewer
+  labels:
+    {{- include "cluster-dashboard.labels" . | nindent 4 }}
+rules:
+# Allow reading basic cluster information for dashboard display
+- apiGroups: [""]
+  resources: ["nodes", "namespaces"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["services", "endpoints"]
+  verbs: ["get", "list"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "list"]
+# Allow reading metrics
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["nodes", "pods"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.dashboard.name }}-viewer
+  labels:
+    {{- include "cluster-dashboard.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.dashboard.name }}-viewer
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.dashboard.name }}
+  namespace: {{ .Values.dashboard.namespace }}

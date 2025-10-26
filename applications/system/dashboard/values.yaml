@@ -1,0 +1,241 @@
+# Default values for cluster-dashboard
+# This is a YAML-formatted file where you can control all services and their ingress paths
+
+# Dashboard application configuration
+dashboard:
+  name: cluster-dashboard
+  namespace: kubernetes-dashboard
+  image:
+    repository: nginx
+    tag: "1.25-alpine"
+    pullPolicy: IfNotPresent
+  
+  # Resource configuration
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+    runAsGroup: 101
+    capabilities:
+      drop:
+        - ALL
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+    # NodePort for direct access on port 8080
+    nodePort:
+      enabled: true
+      port: 30080
+
+# Ingress configuration with granular path control
+ingress:
+  enabled: true
+  className: "traefik"  # or "nginx"
+  
+  # Main dashboard host
+  host: "cluster.local"
+  
+  # TLS configuration
+  tls:
+    enabled: true
+    secretName: "cluster-dashboard-tls"
+    issuer: "letsencrypt-prod"
+  
+  # Annotations for ingress controller
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+# Service definitions - Add/remove/modify services here
+services:
+  # Core cluster management services
+  dashboard:
+    name: "Cluster Dashboard"
+    description: "K3s cluster overview and management"
+    path: "/"
+    icon: "tachometer-alt"
+    category: "Management"
+    color: "#326ce5"
+    enabled: true
+    external: false
+    
+  argocd:
+    name: "ArgoCD"
+    description: "GitOps continuous delivery"
+    path: "/argocd"
+    icon: "git-branch"
+    category: "GitOps"
+    color: "#ef7b4d"
+    enabled: true
+    external: false
+    target:
+      service: "argocd-server"
+      namespace: "argocd"
+      port: 80
+    healthCheck: "/argocd/healthz"
+    
+  grafana:
+    name: "Grafana"
+    description: "Monitoring dashboards and analytics"
+    path: "/grafana"
+    icon: "chart-line"
+    category: "Monitoring"
+    color: "#f46800"
+    enabled: true
+    external: false
+    target:
+      service: "grafana"
+      namespace: "monitoring"
+      port: 80
+    healthCheck: "/grafana/api/health"
+    
+  prometheus:
+    name: "Prometheus"
+    description: "Metrics collection and querying"
+    path: "/prometheus"
+    icon: "database"
+    category: "Monitoring"
+    color: "#e6522c"
+    enabled: true
+    external: false
+    target:
+      service: "prometheus-server"
+      namespace: "monitoring"
+      port: 80
+    healthCheck: "/prometheus/-/healthy"
+    
+  alertmanager:
+    name: "Alertmanager"
+    description: "Alert routing and management"
+    path: "/alertmanager"
+    icon: "bell"
+    category: "Monitoring"
+    color: "#e6522c"
+    enabled: true
+    external: false
+    target:
+      service: "alertmanager"
+      namespace: "monitoring"
+      port: 9093
+    healthCheck: "/alertmanager/-/healthy"
+    
+  jaeger:
+    name: "Jaeger"
+    description: "Distributed tracing"
+    path: "/jaeger"
+    icon: "route"
+    category: "Observability"
+    color: "#60d0e4"
+    enabled: false  # Disabled by default
+    external: false
+    target:
+      service: "jaeger-query"
+      namespace: "observability"
+      port: 16686
+      
+  # Example external service
+  github:
+    name: "GitHub Repository"
+    description: "Source code repository"
+    path: "/github"  # This will redirect externally
+    icon: "github"
+    category: "Development"
+    color: "#333"
+    enabled: true
+    external: true
+    externalUrl: "https://github.com/your-org/k3s-cluster-management"
+    
+  # Example custom application
+  app1:
+    name: "Sample Application"
+    description: "Example workload application"
+    path: "/app1"
+    icon: "rocket"
+    category: "Applications"
+    color: "#28a745"
+    enabled: false  # Disabled by default
+    external: false
+    target:
+      service: "sample-app"
+      namespace: "workloads"
+      port: 8080
+
+# Quick actions configuration
+quickActions:
+  enabled: true
+  actions:
+    - name: "Cluster Overview"
+      description: "Real-time cluster metrics"
+      url: "/grafana/d/cluster-overview/cluster-overview?orgId=1&refresh=30s&kiosk"
+      icon: "tachometer-alt"
+      
+    - name: "Application Status"
+      description: "GitOps deployment status"
+      url: "/argocd/applications"
+      icon: "tasks"
+      
+    - name: "Active Alerts"
+      description: "Current system alerts"
+      url: "/alertmanager/#/alerts"
+      icon: "exclamation-triangle"
+      
+    - name: "Node Metrics"
+      description: "Detailed node performance"
+      url: "/grafana/d/node-metrics/node-metrics?orgId=1&refresh=30s"
+      icon: "server"
+
+# Dashboard customization
+customization:
+  title: "K3s Cluster Management"
+  subtitle: "Production Environment"
+  logo: ""  # URL to custom logo
+  theme: "dark"  # dark or light
+  
+  # Color scheme
+  colors:
+    primary: "#326ce5"
+    secondary: "#f8f9fa"
+    success: "#28a745"
+    warning: "#ffc107"
+    danger: "#dc3545"
+    
+  # Layout configuration
+  layout:
+    showClusterInfo: true
+    showQuickActions: true
+    showHealthStatus: true
+    servicesPerRow: 3
+    
+  # Feature toggles
+  features:
+    healthChecks: true
+    serviceCategories: true
+    searchFilter: true
+    darkModeToggle: true
+
+# Cluster information display
+clusterInfo:
+  enabled: true
+  name: "Production K3s Cluster"
+  environment: "production"
+  version: "v1.28.2+k3s1"
+  nodes: 3
+  
+# Health check configuration
+healthChecks:
+  enabled: true
+  interval: 30  # seconds
+  timeout: 5    # seconds
+  retries: 3

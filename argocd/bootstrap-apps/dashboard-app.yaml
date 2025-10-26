@@ -1,0 +1,76 @@
+# Dashboard Application - Custom Helm Chart
+# Manages the cluster dashboard with configurable services and ingress paths
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dashboard
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: dashboard
+    app.kubernetes.io/part-of: argocd-bootstrap
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/your-org/k3s-cluster-management
+    targetRevision: HEAD
+    path: applications/system/dashboard
+    helm:
+      # Use custom values file for environment-specific configuration
+      valueFiles:
+        - values.yaml
+        # Uncomment for production:
+        # - values-production.yaml
+
+      # Override specific values via parameters
+      parameters:
+        - name: "ingress.host"
+          value: "cluster.local"
+        - name: "customization.title"
+          value: "K3s Development Cluster"
+        - name: "clusterInfo.environment"
+          value: "development"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kubernetes-dashboard
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  revisionHistoryLimit: 10
+
+  # Health checks for dashboard
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+        - /spec/template/spec/containers/0/image
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/clusterIP
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data

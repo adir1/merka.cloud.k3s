@@ -1,0 +1,65 @@
+# Environment ApplicationSet
+# Manages applications across multiple environments using ApplicationSet controller
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: environment-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: environment-apps
+    app.kubernetes.io/part-of: argocd-bootstrap
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          environment: "production"
+      values:
+        environment: "production"
+        revision: "main"
+  - clusters:
+      selector:
+        matchLabels:
+          environment: "staging"
+      values:
+        environment: "staging"
+        revision: "develop"
+  - clusters:
+      selector:
+        matchLabels:
+          environment: "development"
+      values:
+        environment: "development"
+        revision: "develop"
+  
+  template:
+    metadata:
+      name: '{{name}}-{{values.environment}}'
+      labels:
+        environment: '{{values.environment}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/your-org/k3s-cluster-management
+        targetRevision: '{{values.revision}}'
+        path: 'infrastructure/overlays/{{values.environment}}'
+      destination:
+        server: '{{server}}'
+        namespace: '{{values.environment}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      revisionHistoryLimit: 10

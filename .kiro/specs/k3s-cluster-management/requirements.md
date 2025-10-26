@@ -14,6 +14,9 @@ This document defines the requirements for a comprehensive K3s cluster managemen
 - **GitOps_Workflow**: The practice of using Git repositories as the source of truth for cluster state
 - **Helm_Charts**: Kubernetes package manager templates for deploying applications
 - **Bootstrap_Process**: The initial setup sequence that prepares the cluster for GitOps management
+- **Cluster_Dashboard**: A web-based interface providing cluster health statistics and application access links
+- **Ingress_Controller**: The system component that manages external access to cluster services
+- **Service_Routing**: The configuration that defines how external traffic reaches internal services
 
 ## Requirements
 
@@ -88,3 +91,27 @@ This document defines the requirements for a comprehensive K3s cluster managemen
 3. WHEN secrets are required, THE Cluster_Admin_Repository SHALL use proper secret management
 4. THE Cluster_Operators SHALL run with minimal required privileges
 5. THE Bootstrap_Process SHALL apply security hardening configurations
+
+### Requirement 7
+
+**User Story:** As a cluster administrator, I want a centralized dashboard accessible on port 8080, so that I can monitor cluster health and access all deployed applications from a single interface.
+
+#### Acceptance Criteria
+
+1. THE Cluster_Dashboard SHALL be accessible on port 8080 of the K3s_Cluster
+2. THE Cluster_Dashboard SHALL display basic cluster health statistics including node status and resource utilization
+3. THE Cluster_Dashboard SHALL provide direct links to all deployed applications including ArgoCD and Grafana
+4. WHEN new applications are deployed, THE Cluster_Dashboard SHALL automatically discover and display access links
+5. THE Cluster_Dashboard SHALL be based on an existing open-source project with custom modifications
+
+### Requirement 8
+
+**User Story:** As a platform engineer, I want comprehensive ingress routing rules configured, so that all services including ArgoCD, Grafana, and future applications are easily accessible with proper URL routing.
+
+#### Acceptance Criteria
+
+1. THE Ingress_Controller SHALL be deployed and configured as part of the K3s_Cluster setup
+2. THE Service_Routing SHALL provide clean URL paths for ArgoCD, Grafana, and the Cluster_Dashboard
+3. WHEN new services are deployed, THE Ingress_Controller SHALL support dynamic routing configuration
+4. THE Service_Routing SHALL implement SSL termination and secure connections for all exposed services
+5. THE Ingress_Controller SHALL integrate with the GitOps workflow for configuration management

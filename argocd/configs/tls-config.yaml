@@ -1,0 +1,59 @@
+# TLS Configuration for ArgoCD
+# This configures secure connections and certificate management
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-tls-certs-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-tls-certs-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # TLS configuration for repository connections
+  # Add custom CA certificates here if needed
+  
+  # Example for private Git repositories with custom CA
+  # git.example.com: |
+  #   -----BEGIN CERTIFICATE-----
+  #   <certificate content>
+  #   -----END CERTIFICATE-----
+  
+  # TLS configuration for OIDC providers
+  # oidc.example.com: |
+  #   -----BEGIN CERTIFICATE-----
+  #   <certificate content>
+  #   -----END CERTIFICATE-----
+
+---
+# Certificate issuer for automatic TLS certificate management
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: argocd-tls-issuer
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@your-domain.com
+    privateKeySecretRef:
+      name: argocd-tls-issuer-key
+    solvers:
+    - http01:
+        ingress:
+          class: traefik
+
+---
+# Certificate for ArgoCD server
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-server-tls
+  namespace: argocd
+spec:
+  secretName: argocd-server-tls
+  issuerRef:
+    name: argocd-tls-issuer
+    kind: ClusterIssuer
+  dnsNames:
+  - argocd.local
+  - argocd.your-domain.com

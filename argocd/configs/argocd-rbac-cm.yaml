@@ -1,0 +1,75 @@
+# ArgoCD RBAC Configuration
+# This defines role-based access control policies for ArgoCD users and groups
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Default policy for all users
+  policy.default: role:readonly
+  
+  # RBAC policy definitions
+  policy.csv: |
+    # Admin role - full access to everything
+    p, role:admin, applications, *, */*, allow
+    p, role:admin, clusters, *, *, allow
+    p, role:admin, repositories, *, *, allow
+    p, role:admin, certificates, *, *, allow
+    p, role:admin, accounts, *, *, allow
+    p, role:admin, gpgkeys, *, *, allow
+    p, role:admin, logs, get, */*, allow
+    p, role:admin, exec, create, */*, allow
+    
+    # Developer role - can manage applications but not cluster resources
+    p, role:developer, applications, get, */*, allow
+    p, role:developer, applications, create, */*, allow
+    p, role:developer, applications, update, */*, allow
+    p, role:developer, applications, delete, */*, allow
+    p, role:developer, applications, sync, */*, allow
+    p, role:developer, applications, action/*, */*, allow
+    p, role:developer, applications, override, */*, allow
+    p, role:developer, repositories, get, *, allow
+    p, role:developer, clusters, get, *, allow
+    p, role:developer, logs, get, */*, allow
+    
+    # DevOps role - can manage infrastructure applications
+    p, role:devops, applications, *, */infrastructure/*, allow
+    p, role:devops, applications, *, */system/*, allow
+    p, role:devops, applications, get, */*, allow
+    p, role:devops, clusters, get, *, allow
+    p, role:devops, repositories, get, *, allow
+    p, role:devops, logs, get, */*, allow
+    
+    # Readonly role - can only view resources
+    p, role:readonly, applications, get, */*, allow
+    p, role:readonly, clusters, get, *, allow
+    p, role:readonly, repositories, get, *, allow
+    p, role:readonly, logs, get, */*, allow
+    
+    # Project-specific roles
+    p, role:project-admin, applications, *, */workloads/*, allow
+    p, role:project-admin, applications, get, */*, allow
+    
+    # User to role mappings
+    g, admin, role:admin
+    g, admin@local, role:admin
+    g, developer, role:developer
+    g, readonly, role:readonly
+    
+    # GitHub organization mappings (when GitHub auth is configured)
+    g, your-org:admin, role:admin
+    g, your-org:developers, role:developer
+    g, your-org:devops, role:devops
+    
+    # Local group mappings
+    g, argocd-admins, role:admin
+    g, argocd-developers, role:developer
+    g, argocd-devops, role:devops
+  
+  # RBAC scopes for fine-grained access control
+  scopes: '[groups, email]'

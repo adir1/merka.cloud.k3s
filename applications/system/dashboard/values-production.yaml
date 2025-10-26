@@ -1,0 +1,135 @@
+# Production environment values for cluster-dashboard
+# Override the default values.yaml for production-specific configuration
+
+# Dashboard configuration
+dashboard:
+  name: cluster-dashboard
+  namespace: kubernetes-dashboard
+  
+  # Production resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+# Production ingress configuration
+ingress:
+  enabled: true
+  className: "traefik"
+  host: "dashboard.production.company.com"
+  
+  tls:
+    enabled: true
+    secretName: "cluster-dashboard-tls"
+    issuer: "letsencrypt-prod"
+  
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+# Production services configuration
+services:
+  dashboard:
+    enabled: true
+    
+  argocd:
+    enabled: true
+    path: "/argocd"
+    target:
+      service: "argocd-server"
+      namespace: "argocd"
+      port: 80
+    healthCheck: "/argocd/healthz"
+    
+  grafana:
+    enabled: true
+    path: "/grafana"
+    target:
+      service: "grafana"
+      namespace: "monitoring"
+      port: 80
+    healthCheck: "/grafana/api/health"
+    
+  prometheus:
+    enabled: true
+    path: "/prometheus"
+    target:
+      service: "prometheus-server"
+      namespace: "monitoring"
+      port: 80
+    healthCheck: "/prometheus/-/healthy"
+    
+  alertmanager:
+    enabled: true
+    path: "/alertmanager"
+    target:
+      service: "alertmanager"
+      namespace: "monitoring"
+      port: 9093
+    healthCheck: "/alertmanager/-/healthy"
+    
+  # Production-specific services
+  vault:
+    name: "HashiCorp Vault"
+    description: "Secrets management"
+    path: "/vault"
+    icon: "lock"
+    category: "Security"
+    color: "#000000"
+    enabled: true
+    external: false
+    target:
+      service: "vault"
+      namespace: "vault"
+      port: 8200
+    healthCheck: "/vault/v1/sys/health"
+    
+  # External services
+  github:
+    enabled: true
+    externalUrl: "https://github.com/company/k3s-cluster-management"
+    
+  confluence:
+    name: "Documentation"
+    description: "Team documentation and runbooks"
+    path: "/docs"
+    icon: "book"
+    category: "Documentation"
+    color: "#172b4d"
+    enabled: true
+    external: true
+    externalUrl: "https://company.atlassian.net/wiki"
+
+# Production customization
+customization:
+  title: "Production K3s Cluster"
+  subtitle: "Production Environment - Handle with Care"
+  theme: "dark"
+  
+  colors:
+    primary: "#dc3545"  # Red for production warning
+    
+  layout:
+    showClusterInfo: true
+    showQuickActions: true
+    showHealthStatus: true
+    servicesPerRow: 4  # More services per row for production
+
+# Production cluster info
+clusterInfo:
+  enabled: true
+  name: "Production K3s Cluster"
+  environment: "production"
+  version: "v1.28.2+k3s1"
+  nodes: 5
+
+# Enhanced health checks for production
+healthChecks:
+  enabled: true
+  interval: 15  # More frequent checks
+  timeout: 3    # Shorter timeout
+  retries: 5    # More retries

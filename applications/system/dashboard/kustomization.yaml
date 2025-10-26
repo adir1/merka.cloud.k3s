@@ -1,0 +1,25 @@
+# This directory contains a Helm chart for the cluster dashboard
+# Use the values.yaml file to configure services and ingress paths
+# 
+# To deploy:
+# helm install cluster-dashboard . -n kubernetes-dashboard --create-namespace
+#
+# To customize services, edit values.yaml and add/remove/modify entries in the services section
+# Each service can specify:
+# - name: Display name
+# - description: Service description  
+# - path: Ingress path (e.g., /grafana, /argocd)
+# - target: Kubernetes service details (service, namespace, port)
+# - external: Whether it's an external URL
+# - enabled: Whether to include in dashboard
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: cluster-dashboard-helm
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+
+# This kustomization can be used to overlay the Helm chart if needed
+# For basic usage, just use the Helm chart directly

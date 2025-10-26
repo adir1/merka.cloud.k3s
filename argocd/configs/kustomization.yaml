@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: argocd-configs
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+
+resources:
+  - argocd-cm.yaml
+  - argocd-rbac-cm.yaml
+  - argocd-secret.yaml
+  - tls-config.yaml
+
+commonLabels:
+  app.kubernetes.io/name: argocd-configs
+  app.kubernetes.io/part-of: argocd
+  app.kubernetes.io/managed-by: kustomize
+
+# Patches for environment-specific customizations
+patchesStrategicMerge: []
+
+# Configuration transformations
+transformers: []
