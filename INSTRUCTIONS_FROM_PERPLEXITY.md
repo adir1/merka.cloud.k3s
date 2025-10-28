@@ -64,5 +64,9 @@ helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring
 kubectl port-forward svc/monitoring-grafana -n monitoring 3000:80
 *Default credentials*: admin/prom-operator
 
+kubectl --namespace monitoring get pods -l "release=monitoring"
+#### Grafana admin password (if lost)
+kubectl --namespace monitoring get secrets monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
 ### Ingress and Dashboard
 
