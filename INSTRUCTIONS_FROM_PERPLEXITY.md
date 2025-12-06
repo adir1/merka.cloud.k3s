@@ -70,3 +70,22 @@ kubectl --namespace monitoring get secrets monitoring-grafana -o jsonpath="{.dat
 
 ### Ingress and Dashboard
 
+
+### Kubevious (Optional)
+
+https://github.com/kubevious/portable#running-kubevious-portable
+
+docker run --rm -it \
+  -p 5001:5001 \
+  -v ~/.kube/config:/root/.kube/config:ro \
+  kubevious/portable
+
+
+### KubeApps (Optional)
+
+Instructions at https://github.com/vmware-tanzu/kubeapps/blob/main/site/content/docs/latest/tutorials/getting-started.md
+
+kubectl get --namespace default secret kubeapps-operator-token -o go-template='{{.data.token | base64decode}}' ; echo
+
+kubectl port-forward --namespace kubeapps service/kubeapps 8555:80
+
